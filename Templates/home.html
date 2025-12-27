@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMU Security</title>
+    <!-- <link rel="stylesheet" href="style.css"> -->
+     
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+    <header>
+        <div class="main">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='mmu_logo.png') }}" alt="MMU Logo">
+            </div>
+            <ul>
+                <li><a href="reports.html">Reports</a></li>
+                <li><a href="settings.html">Settings</a></li>
+                <li><a href="login.html">Logout</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>Welcome to the MMU Security Dashboard</h2>
+            <p>Here you can monitor security alerts, manage user access, and review system logs.</p>
+        </section>
+           
+        <section class="info">
+            <div class="info-box">
+                <h3>Security Alerts</h3>
+                <p>No new alerts.</p>
+            </div>
+        </section>
+    </main>
+
+
+
+    <footer>
+        <p>&copy; 2024 Multimedia University. All rights reserved.</p>
+    </footer>
+</html>
