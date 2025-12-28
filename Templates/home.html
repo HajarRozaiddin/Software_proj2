@@ -1,27 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MMU Security</title>
-    <!-- <link rel="stylesheet" href="style.css"> -->
-     
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% extends "base.html" %}
 
-</head>
-<body>
-    <header>
-        <div class="main">
-            <div class="logo">
-                <img src="{{ url_for('static', filename='mmu_logo.png') }}" alt="MMU Logo">
-            </div>
-            <ul>
-                <li><a href="reports.html">Reports</a></li>
-                <li><a href="settings.html">Settings</a></li>
-                <li><a href="login.html">Logout</a></li>
-            </ul>
-        </div>
-    </header>
+    {% block title %}MMU Security Dashboard{% endblock %}
+    {% block body %}
 
     <main>
         <section>
@@ -37,9 +18,4 @@
         </section>
     </main>
 
-
-
-    <footer>
-        <p>&copy; 2024 Multimedia University. All rights reserved.</p>
-    </footer>
-</html>
+    {% endblock %}

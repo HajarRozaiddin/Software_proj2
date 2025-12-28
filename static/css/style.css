@@ -83,3 +83,47 @@ footer{
     text-align: left;
     padding-left: 50px;
 }
+
+.form form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+    margin: 20px;
+    border: solid 1px #FEFEFE;
+    padding: 10px 50px;
+    background-color: #FEFEFE;
+    border-radius: 10px;
+    margin-bottom: 5%;
+}
+
+input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    padding: 10px;
+    background-color: #1047AC;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    resize: vertical;
+}

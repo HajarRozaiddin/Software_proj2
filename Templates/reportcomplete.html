@@ -1,0 +1,20 @@
+    {% extends "base.html" %}
+
+    {% block title %}MMU Security Dashboard{% endblock %}
+    {% block body %}
+
+    <main>
+        <section>
+            <h2>
+                Report Submitted Successfully!
+            </h2>
+            
+            <div class="form">>
+                <h1>Your incident report has been submitted.</h1>
+                <p>Thank you for helping us keep the campus safe.</p>
+                <p><a href="{{ url_for('home') }}">Return to Home</a></p>
+            </div>
+        </section>     
+    </main>
+
+    {% endblock %}
