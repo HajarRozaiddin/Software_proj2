@@ -1,4 +1,5 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for, request, session, flash
+import time
 
 app = Flask(__name__, static_folder='static', template_folder='Templates')
 app.secret_key = 'secret123'
@@ -57,6 +58,14 @@ def home():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     return render_template('home.html')
-    
+
+@app.route('/reports')
+def reports():
+    return render_template('reports.html')
+
+@app.route('/reportcomplete')
+def reportcomplete(): 
+    return render_template('reportcomplete.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
