@@ -8,8 +8,8 @@ MAX_ATTEMPTS = 3
 LOCK_TIME = 300  # 5 minutes (300 seconds)
 
 @app.route('/')
-def index():
-    return redirect(url_for('login'))
+def welcome():
+    return render_template('welcome.html')
 
 @app.route('/login')
 def login():

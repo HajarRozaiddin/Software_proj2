@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome | CSEMS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_welcome.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+
+            <!-- Logo -->
+            <img src="static/mmu_logo.png" alt="MMU Logo" class="logo">
+
+            <!-- System Name -->
+            <h1 class="system-title">CSEMS</h1>
+
+            <!-- Welcome Text -->
+            <p class="subtitle">
+                Campus Security and Emergency Management System
+            </p>
+
+            <!-- Login Button -->
+            <a href="/login" class="login-btn">Login</a>
+
+        </div>
+    </div>
+
+</body>
+</html>
