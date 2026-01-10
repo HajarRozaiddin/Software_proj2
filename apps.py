@@ -1,6 +1,18 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 import time
+<<<<<<< HEAD
 from flask_sqlalchemy import SQLAlchemy
+=======
+import mysql.connector
+
+db = mysql.connector.connect(
+    host="127.0.0.1",
+    user="root",
+    password="1234",
+    database="incident_management_db"
+)
+mycursor = db.cursor(dictionary=True)
+>>>>>>> 32a8e6bec9ab490c713d53c0a962d86d2480c478
 
 app = Flask(__name__, static_folder='static', template_folder='Templates')
 app.secret_key = 'secret123'
@@ -53,15 +65,26 @@ def do_login():
         flash(f"Account locked. Try again in {remaining} minute(s).")
         return redirect(url_for('login'))
 
-    user_id = request.form['userid']
-    password = request.form['password']
+    input_user = request.form['userid']
+    input_password = request.form['password']
 
     # Correct details
-    if user_id == "admin" and password == "1234":
-        session['logged_in'] = True
-        session['fail_count'] = 0
-        session['lock_until'] = 0
-        return redirect(url_for('home'))
+    query = "SELECT * FROM admin WHERE UserID = %s AND Password = %s"
+    
+    try:
+        mycursor.execute(query, (input_user, input_password))
+        user = mycursor.fetchone()
+
+        if user:
+            session['logged_in'] = True
+            session['username'] = user['UserID'] 
+            session['fail_count'] = 0
+            session['lock_until'] = 0
+            return redirect(url_for('home'))
+            
+    except mysql.connector.Error as err:
+        flash(f"Database error: {err}")
+        return redirect(url_for('login'))
 
     # Incorrect details
     session['fail_count'] += 1
