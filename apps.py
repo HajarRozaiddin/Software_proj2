@@ -1,8 +1,30 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 import time
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__, static_folder='static', template_folder='Templates')
 app.secret_key = 'secret123'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///csems.db'
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    userid = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    phone = db.Column(db.String(15), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(50), nullable=False)  # 'student' or 'staff' or 'admin' or 'security staff'
+    accountstatus = db.Column(db.String(50), nullable=False)  # 'active' or 'inactive'
+
+class Staff(ForeignKey('user.id'), db.Model):
+    staffid = db.Column(db.Integer, primary_key=True)
+    staffuserid = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    staffdepartment = db.Column(db.String(100), nullable=False)
+
+def _repr__(self):
+    return f"<User {self.userid}>"
+
 
 MAX_ATTEMPTS = 3
 LOCK_TIME = 300  # 5 minutes (300 seconds)
@@ -68,4 +90,6 @@ def reportcomplete():
     return render_template('reportcomplete.html')
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
