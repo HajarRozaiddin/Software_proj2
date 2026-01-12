@@ -2,11 +2,12 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 import time
 import mysql.connector
 
-db = mysql.connector.connect(
-    host="127.0.0.1",
-    user="root",
-    password="1234",
-    database="incident_management_db"
+db = mysql.connector.connect (
+    host="mysql-546b7ed-incident-management.c.aivencloud.com",
+    user="avnadmin",
+    password="AVNS_l7iVDhb8jSUeHse3EHE",
+    database="CSEMS",
+    port=12919,
 )
 mycursor = db.cursor(dictionary=True)
 
@@ -87,5 +88,34 @@ def reports():
 def reportcomplete(): 
     return render_template('reportcomplete.html')
 
+@app.route('/location')
+def location():
+    # Only allow access if logged in
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+        
+    mycursor.execute("SELECT * FROM location")
+    locations = mycursor.fetchall()
+    return render_template('location.html', locations=locations)
+
+@app.route('/add_location', methods=['POST'])
+def add_location():
+    # Fetch data from the HTML form names
+    loc_name = request.form['location_name']
+    loc_desc = request.form['location_description']
+    
+    # Matches your database columns: LocationName and Description
+    query = "INSERT INTO location (LocationName, Description) VALUES (%s, %s)"
+    
+    try:
+        mycursor.execute(query, (loc_name, loc_desc))
+        db.commit() # Important to save changes to Aiven cloud
+        flash("New location added successfully!")
+    except mysql.connector.Error as err:
+        flash(f"Database error: {err}")
+        
+    return redirect(url_for('location'))
+
 if __name__ == '__main__':
     app.run(debug=True)
+
