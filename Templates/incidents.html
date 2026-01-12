@@ -1,0 +1,29 @@
+    
+    {% extends "base.html" %}
+
+    {% block title %}MMU Security Dashboard{% endblock %}
+    {% block body %}
+
+    <main>
+        <section>
+            <h2>Welcome to the MMU Security Dashboard</h2>
+            <p>Here you can monitor security alerts, manage user access, and review system logs.</p>
+        </section>
+        
+           
+        <section class="info">
+            
+            <div class="info-box">
+                <h3>Security Alerts</h3>
+                <p>No new alerts.</p>
+
+                <div class="report-url">
+                <h3>Report an Incident</h3>
+                <li><a href="{{ url_for('reportform') }}">Report Form</a></li>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    {% endblock %}
