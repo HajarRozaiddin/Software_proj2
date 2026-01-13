@@ -1,0 +1,40 @@
+    {% extends "base.html" %}
+
+    {% block title %}MMU Security Dashboard{% endblock %}
+    {% block body %}
+
+    <main>
+        <section>
+            <h2>
+                Issues around campus? Submit a report now.
+            </h2>
+            
+            <div class="form">
+                <form action="/submit_incident" method="post">
+                    
+                    <h1>Incident Report Form</h1>
+
+                    <p>Title of Incident</p>
+                    <input type="text" name="incidenttitle" id="incidenttitle" placeholder="Report Title">
+
+                    <p>Date of Incident</p>
+                    <input type="date" name="incidentdate" id="incidentdate" placeholder="Date">
+
+                    <p>Location of Incident</p>
+                    <input type="text" name="incidentlocation" id="incidentlocation" placeholder="Location">
+
+                    <p>Type of Incident</p>
+                    <input type="text" name="incidenttype" id="incidenttype" placeholder="Type of Incident">
+
+                    <p>Description of Incident</p>
+                    <textarea name="incidenttext" id="incidenttext"></textarea>
+
+                    <button href="/reportcomplete" type="submit" class="btn">
+                        Submit Report
+                    </button>
+                </form>
+            </div>
+        </section>     
+    </main>
+
+    {% endblock %}
