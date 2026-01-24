@@ -1,21 +1,23 @@
-    
-    {% extends "base.html" %}
+{% extends "base.html" %}
 
-    {% block title %}MMU Security Dashboard{% endblock %}
-    {% block body %}
+{% block title %}Settings{% endblock %}
 
-    <main>
-        <section>
-            <h2>Welcome to the MMU Security Dashboard</h2>
-            <p>Here you can monitor security alerts, manage user access, and review system logs.</p>
-        </section>
-           
-        <section class="info">
-            <div class="info-box">
-                <h3>Security Alerts</h3>
-                <p>No new alerts.</p>
-            </div>
-        </section>
-    </main>
+{% block body %}
+<main>
+    <div class="settings-container">
+        <h2>Settings</h2>
 
-    {% endblock %}
+        <div class="settings-item">
+            <a href="{{ url_for('profile') }}">
+                Profile
+            </a>
+        </div>
+
+        <div class="settings-item">
+            <a href="{{ url_for('vehicle_registration') }}">
+                Vehicle Registration
+            </a>
+        </div>
+    </div>
+</main>
+{% endblock %}
