@@ -76,7 +76,7 @@ def do_login():
     input_password = request.form['password']
 
     # Correct details
-    query = "SELECT * FROM admin WHERE UserID = %s AND Password = %s"
+    query = "SELECT * FROM user WHERE UserID = %s AND Password = %s"
     
     try:
         mycursor.execute(query, (input_user, input_password))
@@ -112,7 +112,7 @@ def home():
     return render_template('home.html')
 
 @app.route('/incidents')
-def reports():
+def incidents():
     return render_template('incidents.html')
 
 @app.route('/reportform')
