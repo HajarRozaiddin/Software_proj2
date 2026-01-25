@@ -3,6 +3,7 @@ import time
 import mysql.connector
 from dotenv import load_dotenv
 import os
+from functools import wraps
 
 app = Flask(__name__, static_folder='static', template_folder='Templates')
 app.secret_key = 'secret123'
@@ -48,6 +49,22 @@ mycursor = db.cursor(dictionary=True)
 MAX_ATTEMPTS = 3
 LOCK_TIME = 300  # 5 minutes (300 seconds)
 
+def role_required(allowed_roles):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not session.get('logged_in'):
+                flash("Please log in first.")
+                return redirect(url_for('login'))
+
+            if session.get('role') not in allowed_roles:
+                flash("You are not authorized to access this feature.")
+                return redirect(url_for('home'))
+
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 @app.route('/')
 def welcome():
     return render_template('welcome.html')
@@ -66,43 +83,49 @@ def do_login():
     if 'lock_until' not in session:
         session['lock_until'] = 0
 
-    # Check if user is locked
     if current_time < session['lock_until']:
-        remaining = int((session['lock_until'] - current_time) / 60) + 1
-        flash(f"Account locked. Try again in {remaining} minute(s).")
+        flash("Account temporarily locked. Try again later.")
         return redirect(url_for('login'))
 
+<<<<<<< HEAD
     input_user = request.form['userid']
     input_password = request.form['password']
 
     # Correct details
     query = "SELECT * FROM user WHERE UserID = %s AND Password = %s"
     
+=======
+>>>>>>> d5dbd0d18885a522ded87497e6dd8bac626b7e33
     try:
-        mycursor.execute(query, (input_user, input_password))
-        user = mycursor.fetchone()
-
-        if user:
-            session['logged_in'] = True
-            session['username'] = user['UserID'] 
-            session['fail_count'] = 0
-            session['lock_until'] = 0
-            return redirect(url_for('home'))
-            
-    except mysql.connector.Error as err:
-        flash(f"Database error: {err}")
+        user_id = int(request.form['userid'])
+    except ValueError:
+        flash("Invalid User ID.")
         return redirect(url_for('login'))
 
-    # Incorrect details
+    password = request.form['password']
+
+    query = """
+    SELECT UserID, Role
+    FROM user
+    WHERE UserID = %s
+      AND Password = %s
+      AND AccountStatus = 'Active'
+    """
+
+    mycursor.execute(query, (user_id, password))
+    user = mycursor.fetchone()
+
+    if user:
+        session.clear()
+        session['logged_in'] = True
+        session['userid'] = user['UserID']
+        session['role'] = user['Role']
+        session['fail_count'] = 0
+        session['lock_until'] = 0
+        return redirect(url_for('home'))
+
     session['fail_count'] += 1
-
-    if session['fail_count'] >= MAX_ATTEMPTS:
-        session['lock_until'] = current_time + LOCK_TIME
-        flash("Too many failed attempts. Login locked for 5 minutes.")
-    else:
-        attempts_left = MAX_ATTEMPTS - session['fail_count']
-        flash(f"Invalid login. {attempts_left} attempt(s) remaining.")
-
+    flash("Invalid login credentials.")
     return redirect(url_for('login'))
 
 @app.route('/home')
@@ -115,6 +138,7 @@ def home():
 def incidents():
     return render_template('incidents.html')
 
+
 @app.route('/reportform')
 def reportform():
     return render_template('reportform.html')
@@ -122,6 +146,100 @@ def reportform():
 @app.route('/reportcomplete')
 def reportcomplete(): 
     return render_template('reportcomplete.html')
+
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
+
+@app.route('/profile')
+def profile():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    # Admin silently redirected
+    if session.get('role') == 'Admin':
+        return redirect(url_for('home'))
+
+    user_id = session['userid']
+    role = session['role']
+
+    # -------- BASE USER INFO --------
+    mycursor.execute("""
+        SELECT UserID, Name, Email, Phone, Role, AccountStatus
+        FROM user
+        WHERE UserID = %s
+    """, (user_id,))
+    user = mycursor.fetchone()
+
+    # -------- ROLE-SPECIFIC INFO (UserID-based) --------
+    profile_data = {}
+
+    if role == 'Student':
+        mycursor.execute("""
+            SELECT UserID, Faculty, Programme
+            FROM student
+            WHERE UserID = %s
+        """, (user_id,))
+        profile_data = mycursor.fetchone()
+
+    elif role == 'Staff':
+        mycursor.execute("""
+            SELECT UserID, Department
+            FROM staff
+            WHERE UserID = %s
+        """, (user_id,))
+        profile_data = mycursor.fetchone()
+
+    elif role == 'SecurityStaff':
+        mycursor.execute("""
+            SELECT UserID, Shift
+            FROM securitystaff
+            WHERE UserID = %s
+        """, (user_id,))
+        profile_data = mycursor.fetchone()
+
+    # -------- VEHICLES --------
+    mycursor.execute("""
+        SELECT PlateNumber, VehicleStatus
+        FROM vehicle
+        WHERE UserID = %s
+    """, (user_id,))
+    vehicles = mycursor.fetchall()
+
+    return render_template(
+        'profile.html',
+        user=user,
+        role=role,
+        profile_data=profile_data,
+        vehicles=vehicles
+    )
+
+
+@app.route('/vehicle_registration', methods=['GET', 'POST'])
+@role_required(['Student', 'Staff', 'SecurityStaff'])
+def vehicle_registration():
+
+    if request.method == 'POST':
+        plate_number = request.form['car_plate'].upper()
+        user_id = session['userid']
+
+        check_query = "SELECT * FROM vehicle WHERE PlateNumber = %s"
+        mycursor.execute(check_query, (plate_number,))
+        if mycursor.fetchone():
+            flash("Vehicle already registered.")
+            return redirect(url_for('vehicle_registration'))
+
+        insert_query = """
+        INSERT INTO vehicle (PlateNumber, VehicleStatus, UserID)
+        VALUES (%s, %s, %s)
+        """
+
+        mycursor.execute(insert_query, (plate_number, 'Active', user_id))
+        db.commit()
+        flash("Vehicle registered successfully.")
+        return redirect(url_for('vehicle_registration'))
+
+    return render_template('vehicle_registration.html')
 
 if __name__ == '__main__':
     # with app.app_context():

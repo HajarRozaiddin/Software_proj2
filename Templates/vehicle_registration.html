@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Registration{% endblock %}
+
+{% block body %}
+<main>
+    <div class="vehicle-wrapper">
+
+        <!-- Flash message slot (always takes space) -->
+        <div class="flash-slot">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-top">
+                        {{ messages[0] }}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="vehicle-container">
+            <h2>Vehicle Registration</h2>
+
+            <form class="vehicle-form" method="POST">
+                <label for="car_plate">Car Registration Number</label>
+
+                <input
+                    type="text"
+                    id="car_plate"
+                    name="car_plate"
+                    placeholder="Enter Here"
+                    required
+                >
+
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+
+{% block body %}
+<div class="profile-wrapper">
+
+    <h2 class="profile-title">Profile</h2>
+
+    <div class="profile-card">
+
+        <!-- LEFT PANEL -->
+        <div class="profile-left">
+            <img src="{{ url_for('static', filename='UserProfile.png') }}" alt="Profile Picture">
+            <p class="profile-name">{{ user.Name }}</p>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="profile-right">
+
+            <div class="profile-field">
+                <label>User ID</label>
+                <input value="{{ user.UserID }}" readonly>
+            </div>
+
+            <div class="profile-field">
+                <label>Email</label>
+                <input value="{{ user.Email }}" readonly>
+            </div>
+
+            <div class="profile-field">
+                <label>Phone</label>
+                <input value="{{ user.Phone }}" readonly>
+            </div>
+
+            <div class="profile-field">
+                <label>Role</label>
+                <input value="{{ user.Role }}" readonly>
+            </div>
+
+            <div class="profile-field">
+                <label>Account Status</label>
+                <input value="{{ user.AccountStatus }}" readonly>
+            </div>
+
+            <!-- STUDENT -->
+            {% if role == 'Student' %}
+            <div class="profile-field">
+                <label>Faculty</label>
+                <input value="{{ profile_data.Faculty }}" readonly>
+            </div>
+
+            <div class="profile-field">
+                <label>Programme</label>
+                <input value="{{ profile_data.Programme }}" readonly>
+            </div>
+            {% endif %}
+
+            <!-- STAFF -->
+            {% if role == 'Staff' %}
+            <div class="profile-field">
+                <label>Department</label>
+                <input value="{{ profile_data.Department }}" readonly>
+            </div>
+            {% endif %}
+
+            <!-- SECURITY -->
+            {% if role == 'SecurityStaff' %}
+            <div class="profile-field">
+                <label>Shift</label>
+                <input value="{{ profile_data.Shift }}" readonly>
+            </div>
+            {% endif %}
+
+            <!-- VEHICLES -->
+            <h3 class="vehicle-title">Vehicle</h3>
+
+            {% if vehicles %}
+                {% for v in vehicles %}
+                <div class="profile-field">
+                    <input value="{{ v.PlateNumber }} ({{ v.VehicleStatus }})" readonly>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-vehicle">No vehicles registered</p>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
