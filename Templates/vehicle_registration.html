@@ -7,15 +7,18 @@
     <div class="vehicle-wrapper">
 
         <!-- Flash message slot (always takes space) -->
-        <div class="flash-slot">
-            {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    <div class="flash-top">
-                        {{ messages[0] }}
-                    </div>
-                {% endif %}
-            {% endwith %}
-        </div>
+<div class="flash-slot">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-top {{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
 
         <div class="vehicle-container">
             <h2>Vehicle Registration</h2>
