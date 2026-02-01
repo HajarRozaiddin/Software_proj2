@@ -12,10 +12,13 @@
         <div class="profile-left">
             <img src="{{ url_for('static', filename='UserProfile.png') }}" alt="Profile Picture">
             <p class="profile-name">{{ user.Name }}</p>
+
+            <!-- BLUE EDIT BUTTON -->
+            <button class="edit-btn" onclick="enableEdit()">Edit</button>
         </div>
 
-        <!-- RIGHT PANEL -->
-        <div class="profile-right">
+        <!-- RIGHT PANEL (FORM) -->
+        <form method="POST" class="profile-right" id="profileForm">
 
             <div class="profile-field">
                 <label>User ID</label>
@@ -24,22 +27,12 @@
 
             <div class="profile-field">
                 <label>Email</label>
-                <input value="{{ user.Email }}" readonly>
+                <input name="email" value="{{ user.Email }}" readonly class="editable">
             </div>
 
             <div class="profile-field">
                 <label>Phone</label>
-                <input value="{{ user.Phone }}" readonly>
-            </div>
-
-            <div class="profile-field">
-                <label>Role</label>
-                <input value="{{ user.Role }}" readonly>
-            </div>
-
-            <div class="profile-field">
-                <label>Account Status</label>
-                <input value="{{ user.AccountStatus }}" readonly>
+                <input name="phone" value="{{ user.Phone }}" readonly class="editable">
             </div>
 
             <!-- STUDENT -->
@@ -71,20 +64,86 @@
             </div>
             {% endif %}
 
+            <!-- ACTION BUTTONS -->
+            <div class="profile-actions" id="profileActions" style="display:none;">
+                <button type="button" class="cancel-btn" onclick="cancelEdit()">Cancel</button>
+                <button type="submit" class="submit-btn">Submit</button>
+            </div>
+
             <!-- VEHICLES -->
             <h3 class="vehicle-title">Vehicle</h3>
 
             {% if vehicles %}
                 {% for v in vehicles %}
-                <div class="profile-field">
-                    <input value="{{ v.PlateNumber }} ({{ v.VehicleStatus }})" readonly>
+                <div class="profile-field vehicle-row">
+                    <input value="{{ v.PlateNumber }}" readonly>
+
+                    <button
+                        type="button"
+                        class="delete-btn"
+                        onclick="openModal('{{ v.PlateNumber }}')">
+                        Remove
+                    </button>
                 </div>
                 {% endfor %}
             {% else %}
                 <p class="no-vehicle">No vehicles registered</p>
             {% endif %}
 
+        </form>
+    </div>
+</div>
+
+<!-- ===== DELETE CONFIRM MODAL ===== -->
+<div id="deleteModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+        <h3>Remove Vehicle</h3>
+        <p>Are you sure you want to remove this vehicle?</p>
+
+        <div class="modal-actions">
+            <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button class="delete-btn" onclick="confirmDelete()">Remove</button>
         </div>
     </div>
 </div>
+
+<!-- ===== JS ===== -->
+<script>
+let plateToDelete = null;
+
+
+function enableEdit() {
+    document.querySelectorAll('.editable').forEach(input => {
+        input.removeAttribute('readonly');
+    });
+    document.getElementById('profileActions').style.display = 'flex';
+}
+
+/* Cancel profile edit */
+function cancelEdit() {
+    window.location.reload();
+}
+
+/* ===== MODAL FUNCTIONS ===== */
+function openModal(plate) {
+    plateToDelete = plate;
+    document.getElementById("deleteModal").style.display = "flex";
+}
+
+function closeModal() {
+    plateToDelete = null;
+    document.getElementById("deleteModal").style.display = "none";
+}
+
+function confirmDelete() {
+    if (!plateToDelete) return;
+
+    fetch(`/delete_vehicle/${plateToDelete}`, {
+        method: "POST"
+    }).then(() => {
+        window.location.reload();
+    });
+}
+</script>
+
 {% endblock %}

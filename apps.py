@@ -87,15 +87,12 @@ def do_login():
         flash("Account temporarily locked. Try again later.")
         return redirect(url_for('login'))
 
-<<<<<<< HEAD
     input_user = request.form['userid']
     input_password = request.form['password']
 
     # Correct details
     query = "SELECT * FROM user WHERE UserID = %s AND Password = %s"
     
-=======
->>>>>>> d5dbd0d18885a522ded87497e6dd8bac626b7e33
     try:
         user_id = int(request.form['userid'])
     except ValueError:
@@ -128,6 +125,41 @@ def do_login():
     flash("Invalid login credentials.")
     return redirect(url_for('login'))
 
+@app.route('/reset', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        user_id = request.form['userid']
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            flash("Passwords do not match.")
+            return redirect(url_for('reset_password'))
+
+        mycursor.execute("""
+            SELECT UserID
+            FROM user
+            WHERE UserID = %s
+        """, (user_id,))
+        user = mycursor.fetchone()
+
+        if not user:
+            flash("User ID not found.")
+            return redirect(url_for('reset_password'))
+
+        mycursor.execute("""
+            UPDATE user
+            SET Password = %s
+            WHERE UserID = %s
+        """, (new_password, user_id))
+        db.commit()
+
+        flash("Password reset successful. Please login.")
+        return redirect(url_for('login'))
+
+    return render_template('reset.html')
+
+
 @app.route('/home')
 def home():
     if not session.get('logged_in'):
@@ -151,32 +183,43 @@ def reportcomplete():
 def settings():
     return render_template('settings.html')
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    # Admin silently redirected
-    if session.get('role') == 'Admin':
-        return redirect(url_for('home'))
-
     user_id = session['userid']
     role = session['role']
 
+    # 👉 UPDATE email & phone
+    if request.method == 'POST':
+        new_email = request.form['email']
+        new_phone = request.form['phone']
+
+        mycursor.execute("""
+            UPDATE user
+            SET Email = %s, Phone = %s
+            WHERE UserID = %s
+        """, (new_email, new_phone, user_id))
+        db.commit()
+
+        flash("Profile updated successfully ✔", "success")
+        return redirect(url_for('profile'))
+
     # -------- BASE USER INFO --------
     mycursor.execute("""
-        SELECT UserID, Name, Email, Phone, Role, AccountStatus
+        SELECT UserID, Name, Email, Phone
         FROM user
         WHERE UserID = %s
     """, (user_id,))
     user = mycursor.fetchone()
 
-    # -------- ROLE-SPECIFIC INFO (UserID-based) --------
+    # -------- ROLE DATA --------
     profile_data = {}
 
     if role == 'Student':
         mycursor.execute("""
-            SELECT UserID, Faculty, Programme
+            SELECT Faculty, Programme
             FROM student
             WHERE UserID = %s
         """, (user_id,))
@@ -184,7 +227,7 @@ def profile():
 
     elif role == 'Staff':
         mycursor.execute("""
-            SELECT UserID, Department
+            SELECT Department
             FROM staff
             WHERE UserID = %s
         """, (user_id,))
@@ -192,13 +235,12 @@ def profile():
 
     elif role == 'SecurityStaff':
         mycursor.execute("""
-            SELECT UserID, Shift
+            SELECT Shift
             FROM securitystaff
             WHERE UserID = %s
         """, (user_id,))
         profile_data = mycursor.fetchone()
 
-    # -------- VEHICLES --------
     mycursor.execute("""
         SELECT PlateNumber, VehicleStatus
         FROM vehicle
@@ -214,6 +256,20 @@ def profile():
         vehicles=vehicles
     )
 
+@app.route('/delete_vehicle/<plate>', methods=['POST'])
+def delete_vehicle(plate):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    user_id = session['userid']
+
+    mycursor.execute("""
+        DELETE FROM vehicle
+        WHERE PlateNumber = %s AND UserID = %s
+    """, (plate, user_id))
+    db.commit()
+    return redirect(url_for('profile'))
+
 
 @app.route('/vehicle_registration', methods=['GET', 'POST'])
 @role_required(['Student', 'Staff', 'SecurityStaff'])
@@ -226,7 +282,7 @@ def vehicle_registration():
         check_query = "SELECT * FROM vehicle WHERE PlateNumber = %s"
         mycursor.execute(check_query, (plate_number,))
         if mycursor.fetchone():
-            flash("Vehicle already registered.")
+            flash("Vehicle already registered ✖.", "error")
             return redirect(url_for('vehicle_registration'))
 
         insert_query = """
@@ -236,10 +292,16 @@ def vehicle_registration():
 
         mycursor.execute(insert_query, (plate_number, 'Active', user_id))
         db.commit()
-        flash("Vehicle registered successfully.")
+        flash("Vehicle registered successfully ✔.", "success")
         return redirect(url_for('vehicle_registration'))
 
     return render_template('vehicle_registration.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()      
+    return redirect(url_for('login'))
+
 
 if __name__ == '__main__':
     # with app.app_context():
