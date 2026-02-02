@@ -100,15 +100,12 @@ def do_login():
         flash("Account temporarily locked. Try again later.")
         return redirect(url_for('login'))
 
-<<<<<<< HEAD
-=======
     input_user = request.form['userid']
     input_password = request.form['password']
 
     # Correct details
     query = "SELECT * FROM user WHERE UserID = %s AND Password = %s"
     
->>>>>>> 50767088c5fd00b298cd68aad6638675dad5a572
     try:
         user_id = int(request.form['userid'])
     except ValueError:
@@ -499,7 +496,6 @@ def vehicle_registration():
 
     return render_template('vehicle_registration.html')
 
-<<<<<<< HEAD
 @app.route('/reportuser', methods=['GET', 'POST'])
 @role_required(['Security staff'])
 def reportuser():
@@ -534,12 +530,10 @@ def reportuser():
     
     return render_template('reportuser.html', users=users_list)
 
-=======
 @app.route('/logout')
 def logout():
     session.clear()      
     return redirect(url_for('login'))
->>>>>>> 50767088c5fd00b298cd68aad6638675dad5a572
 
 
 if __name__ == '__main__':
