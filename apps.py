@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 import time
 import mysql.connector
+
 from dotenv import load_dotenv
 import os
 from functools import wraps
@@ -119,11 +120,78 @@ def do_login():
         session['role'] = user['Role']
         session['fail_count'] = 0
         session['lock_until'] = 0
+
+        # --- ROLE-BASED REDIRECTION ---
+        if session['role'] == 'Admin':
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return redirect(url_for('home'))
+    else:
+          session['fail_count'] += 1
+          flash("Invalid login credentials.")
+          return redirect(url_for('login'))
+
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    # Security check: ensures only admins can see this
+    if not session.get('logged_in') or session.get('role') != 'Admin':
+        flash("Unauthorized access.")
         return redirect(url_for('home'))
 
-    session['fail_count'] += 1
-    flash("Invalid login credentials.")
-    return redirect(url_for('login'))
+    mycursor.execute("SELECT COUNT(*) as total FROM location")
+    loc_count = mycursor.fetchone()['total']
+    return render_template('admin_dashboard.html', loc_count=loc_count)
+
+@app.route('/manage_users')
+def manage_users():
+    # Ensure 'Admin' matches exactly what is in your MySQL table
+    if not session.get('logged_in') or session.get('role') != 'Admin':
+        flash("Unauthorized access. Admin only.")
+        return redirect(url_for('login'))
+        
+    mycursor.execute("SELECT UserID, Name, Role, AccountStatus FROM user")
+    users = mycursor.fetchall()
+    return render_template('manage_users.html', users=users)
+
+@app.route('/update_user_role', methods=['POST'])
+def update_user_role():
+    target_user = request.form['userid']
+    new_level = request.form['admin_level'] 
+    
+    query = "UPDATE admin SET AdminLevel = %s WHERE UserID = %s"
+    try:
+        mycursor.execute(query, (new_level, target_user))
+        db.commit()
+        flash(f"User {target_user} updated successfully!")
+    except mysql.connector.Error as err:
+        flash(f"Database update failed: {err}")
+        
+    return redirect(url_for('manage_users'))
+
+@app.route('/location')
+def location():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+        
+    mycursor.execute("SELECT * FROM location")
+    locations = mycursor.fetchall()
+    return render_template('location.html', locations=locations)
+
+@app.route('/add_location', methods=['POST'])
+def add_location():
+    loc_name = request.form['location_name']
+    loc_desc = request.form['location_description']
+    
+    query = "INSERT INTO location (LocationName, Description) VALUES (%s, %s)"
+    
+    try:
+        mycursor.execute(query, (loc_name, loc_desc))
+        db.commit() 
+        flash("New location added successfully!")
+    except mysql.connector.Error as err:
+        flash(f"Database error: {err}")
+        
+    return redirect(url_for('location'))
 
 @app.route('/reset', methods=['GET', 'POST'])
 def reset_password():

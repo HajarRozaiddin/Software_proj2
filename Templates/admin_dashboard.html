@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}MMU Admin Dashboard{% endblock %}
+
+{% block body %}
+<style>
+    /* MODIFIED: Changed from grey/dark grey to match the MMU Dark Blue bottom bar */
+    .admin-header { 
+        background-color: #012d9e; /* This matches the dark blue footer */
+        color: white; 
+        padding: 25px; 
+        border-radius: 0px 0px 8px 8px; 
+        margin-bottom: 30px;
+    }
+    
+    .stats-container { display: flex; gap: 20px; padding: 0 20px; }
+    
+    /* Blue Module: Location Management */
+    .card-blue { 
+        background-color: #e3f2fd; 
+        border-left: 5px solid #2196f3; 
+        padding: 20px; 
+        border-radius: 4px; 
+        flex: 1; 
+    }
+    
+    /* Green Module: User Management */
+    .card-green { 
+        background-color: #e8f5e9; 
+        border-left: 5px solid #4caf50; 
+        padding: 20px; 
+        border-radius: 4px; 
+        flex: 1; 
+    }
+
+    .btn-blue { background-color: #2196f3; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; display: inline-block; }
+    .btn-green { background-color: #4caf50; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none; display: inline-block; }
+</style>
+
+<div class="admin-header">
+    <h1 style="margin: 0;">System Management Dashboard</h1>
+    <p style="margin: 5px 0 0 0; opacity: 0.9;">Welcome, Admin {{ session['username'] }}</p>
+</div>
+
+<div class="stats-container">
+
+    <div class="card-green">
+        <h3>User Management</h3>
+        <p style="margin: 10px 0;">Modify roles and access levels</p>
+        <a href="{{ url_for('manage_users') }}" class="btn btn-green">Manage Users</a>
+    </div>
+</div>
+{% endblock %}
