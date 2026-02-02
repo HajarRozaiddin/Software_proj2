@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reset Password</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_reset.css') }}">
+</head>
+<body>
+
+    <div class="login-box">
+
+        <!-- LOGO -->
+        <div class="login-logo">
+            <img src="{{ url_for('static', filename='mmu_logo.png') }}" alt="MMU Logo">
+        </div>
+
+        <!-- FLASH MESSAGE -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="error-msg">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+
+            <label>User ID</label>
+            <input type="text" name="userid" required>
+
+            <label>New Password</label>
+            <input type="password" name="password" required>
+
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" required>
+
+            <input type="submit" value="Reset Password">
+        </form>
+
+        <div class="forgot-link">
+            <a href="{{ url_for('login') }}">Back to Login</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

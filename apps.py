@@ -4,6 +4,7 @@ import mysql.connector
 
 from dotenv import load_dotenv
 import os
+from functools import wraps
 
 app = Flask(__name__, static_folder='static', template_folder='Templates')
 app.secret_key = 'secret123'
@@ -49,6 +50,22 @@ mycursor = db.cursor(dictionary=True)
 MAX_ATTEMPTS = 3
 LOCK_TIME = 300  # 5 minutes (300 seconds)
 
+def role_required(allowed_roles):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not session.get('logged_in'):
+                flash("Please log in first.")
+                return redirect(url_for('login'))
+
+            if session.get('role') not in allowed_roles:
+                flash("You are not authorized to access this feature.")
+                return redirect(url_for('home'))
+
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 @app.route('/')
 def welcome():
     return render_template('welcome.html')
@@ -67,53 +84,57 @@ def do_login():
     if 'lock_until' not in session:
         session['lock_until'] = 0
 
-    # Check if user is locked
     if current_time < session['lock_until']:
-        remaining = int((session['lock_until'] - current_time) / 60) + 1
-        flash(f"Account locked. Try again in {remaining} minute(s).")
+        flash("Account temporarily locked. Try again later.")
         return redirect(url_for('login'))
 
     input_user = request.form['userid']
     input_password = request.form['password']
 
     # Correct details
-    query = "SELECT * FROM admin WHERE UserID = %s AND Password = %s"
+    query = "SELECT * FROM user WHERE UserID = %s AND Password = %s"
     
     try:
-        mycursor.execute(query, (input_user, input_password))
-        user = mycursor.fetchone()
-
-        if user:
-            session['logged_in'] = True
-            session['username'] = user['UserID']
-            session['role'] = 'admin' if user['AdminLevel'] == 1 else 'user'
-            session['fail_count'] = 0
-            session['lock_until'] = 0
-            
-            if session['role'] == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            else:
-                return redirect(url_for('home'))
-            
-    except mysql.connector.Error as err:
-        flash(f"Database error: {err}")
+        user_id = int(request.form['userid'])
+    except ValueError:
+        flash("Invalid User ID.")
         return redirect(url_for('login'))
 
-    # Incorrect details
-    session['fail_count'] += 1
+    password = request.form['password']
 
-    if session['fail_count'] >= MAX_ATTEMPTS:
-        session['lock_until'] = current_time + LOCK_TIME
-        flash("Too many failed attempts. Login locked for 5 minutes.")
+    query = """
+    SELECT UserID, Role
+    FROM user
+    WHERE UserID = %s
+      AND Password = %s
+      AND AccountStatus = 'Active'
+    """
+
+    mycursor.execute(query, (user_id, password))
+    user = mycursor.fetchone()
+
+    if user:
+        session.clear()
+        session['logged_in'] = True
+        session['userid'] = user['UserID']
+        session['role'] = user['Role']
+        session['fail_count'] = 0
+        session['lock_until'] = 0
+
+        # --- ROLE-BASED REDIRECTION ---
+        if session['role'] == 'Admin':
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return redirect(url_for('home'))
     else:
-        attempts_left = MAX_ATTEMPTS - session['fail_count']
-        flash(f"Invalid login. {attempts_left} attempt(s) remaining.")
-
-    return redirect(url_for('login'))
+          session['fail_count'] += 1
+          flash("Invalid login credentials.")
+          return redirect(url_for('login'))
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
-    if not session.get('logged_in') or session.get('role') != 'admin':
+    # Security check: ensures only admins can see this
+    if not session.get('logged_in') or session.get('role') != 'Admin':
         flash("Unauthorized access.")
         return redirect(url_for('home'))
 
@@ -121,32 +142,91 @@ def admin_dashboard():
     loc_count = mycursor.fetchone()['total']
     return render_template('admin_dashboard.html', loc_count=loc_count)
 
-# --- ADMIN MODULE: User Access Management ---
 @app.route('/manage_users')
 def manage_users():
-    # Only admins can access this page
-    if not session.get('logged_in') or session.get('role') != 'admin':
+    # Ensure 'Admin' matches exactly what is in your MySQL table
+    if not session.get('logged_in') or session.get('role') != 'Admin':
+        flash("Unauthorized access. Admin only.")
         return redirect(url_for('login'))
         
-    mycursor.execute("SELECT UserID, AdminLevel FROM admin")
+    mycursor.execute("SELECT UserID, Name, Role, AccountStatus FROM user")
     users = mycursor.fetchall()
     return render_template('manage_users.html', users=users)
 
 @app.route('/update_user_role', methods=['POST'])
 def update_user_role():
     target_user = request.form['userid']
-    new_level = request.form['admin_level'] # Match the 'name' attribute in your HTML select
+    new_level = request.form['admin_level'] 
     
     query = "UPDATE admin SET AdminLevel = %s WHERE UserID = %s"
     try:
         mycursor.execute(query, (new_level, target_user))
         db.commit()
-        # This acts as the final step of your Sequence Diagram
         flash(f"User {target_user} updated successfully!")
     except mysql.connector.Error as err:
         flash(f"Database update failed: {err}")
         
     return redirect(url_for('manage_users'))
+
+@app.route('/location')
+def location():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+        
+    mycursor.execute("SELECT * FROM location")
+    locations = mycursor.fetchall()
+    return render_template('location.html', locations=locations)
+
+@app.route('/add_location', methods=['POST'])
+def add_location():
+    loc_name = request.form['location_name']
+    loc_desc = request.form['location_description']
+    
+    query = "INSERT INTO location (LocationName, Description) VALUES (%s, %s)"
+    
+    try:
+        mycursor.execute(query, (loc_name, loc_desc))
+        db.commit() 
+        flash("New location added successfully!")
+    except mysql.connector.Error as err:
+        flash(f"Database error: {err}")
+        
+    return redirect(url_for('location'))
+
+@app.route('/reset', methods=['GET', 'POST'])
+def reset_password():
+    if request.method == 'POST':
+        user_id = request.form['userid']
+        new_password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if new_password != confirm_password:
+            flash("Passwords do not match.")
+            return redirect(url_for('reset_password'))
+
+        mycursor.execute("""
+            SELECT UserID
+            FROM user
+            WHERE UserID = %s
+        """, (user_id,))
+        user = mycursor.fetchone()
+
+        if not user:
+            flash("User ID not found.")
+            return redirect(url_for('reset_password'))
+
+        mycursor.execute("""
+            UPDATE user
+            SET Password = %s
+            WHERE UserID = %s
+        """, (new_password, user_id))
+        db.commit()
+
+        flash("Password reset successful. Please login.")
+        return redirect(url_for('login'))
+
+    return render_template('reset.html')
+
 
 @app.route('/home')
 def home():
@@ -158,6 +238,7 @@ def home():
 def incidents():
     return render_template('incidents.html')
 
+
 @app.route('/reportform')
 def reportform():
     return render_template('reportform.html')
@@ -166,33 +247,129 @@ def reportform():
 def reportcomplete(): 
     return render_template('reportcomplete.html')
 
-@app.route('/location')
-def location():
-    
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-        
-    mycursor.execute("SELECT * FROM location")
-    locations = mycursor.fetchall()
-    return render_template('location.html', locations=locations)
 
-@app.route('/add_location', methods=['POST'])
-def add_location():
-    
-    loc_name = request.form['location_name']
-    loc_desc = request.form['location_description']
-    
-   
-    query = "INSERT INTO location (LocationName, Description) VALUES (%s, %s)"
-    
-    try:
-        mycursor.execute(query, (loc_name, loc_desc))
-        db.commit() 
-        flash("New location added successfully!")
-    except mysql.connector.Error as err:
-        flash(f"Database error: {err}")
-        
-    return redirect(url_for('location'))
+    user_id = session['userid']
+    role = session['role']
+
+    # 👉 UPDATE email & phone
+    if request.method == 'POST':
+        new_email = request.form['email']
+        new_phone = request.form['phone']
+
+        mycursor.execute("""
+            UPDATE user
+            SET Email = %s, Phone = %s
+            WHERE UserID = %s
+        """, (new_email, new_phone, user_id))
+        db.commit()
+
+        flash("Profile updated successfully ✔", "success")
+        return redirect(url_for('profile'))
+
+    # -------- BASE USER INFO --------
+    mycursor.execute("""
+        SELECT UserID, Name, Email, Phone
+        FROM user
+        WHERE UserID = %s
+    """, (user_id,))
+    user = mycursor.fetchone()
+
+    # -------- ROLE DATA --------
+    profile_data = {}
+
+    if role == 'Student':
+        mycursor.execute("""
+            SELECT Faculty, Programme
+            FROM student
+            WHERE UserID = %s
+        """, (user_id,))
+        profile_data = mycursor.fetchone()
+
+    elif role == 'Staff':
+        mycursor.execute("""
+            SELECT Department
+            FROM staff
+            WHERE UserID = %s
+        """, (user_id,))
+        profile_data = mycursor.fetchone()
+
+    elif role == 'SecurityStaff':
+        mycursor.execute("""
+            SELECT Shift
+            FROM securitystaff
+            WHERE UserID = %s
+        """, (user_id,))
+        profile_data = mycursor.fetchone()
+
+    mycursor.execute("""
+        SELECT PlateNumber, VehicleStatus
+        FROM vehicle
+        WHERE UserID = %s
+    """, (user_id,))
+    vehicles = mycursor.fetchall()
+
+    return render_template(
+        'profile.html',
+        user=user,
+        role=role,
+        profile_data=profile_data,
+        vehicles=vehicles
+    )
+
+@app.route('/delete_vehicle/<plate>', methods=['POST'])
+def delete_vehicle(plate):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    user_id = session['userid']
+
+    mycursor.execute("""
+        DELETE FROM vehicle
+        WHERE PlateNumber = %s AND UserID = %s
+    """, (plate, user_id))
+    db.commit()
+    return redirect(url_for('profile'))
+
+
+@app.route('/vehicle_registration', methods=['GET', 'POST'])
+@role_required(['Student', 'Staff', 'SecurityStaff'])
+def vehicle_registration():
+
+    if request.method == 'POST':
+        plate_number = request.form['car_plate'].upper()
+        user_id = session['userid']
+
+        check_query = "SELECT * FROM vehicle WHERE PlateNumber = %s"
+        mycursor.execute(check_query, (plate_number,))
+        if mycursor.fetchone():
+            flash("Vehicle already registered ✖.", "error")
+            return redirect(url_for('vehicle_registration'))
+
+        insert_query = """
+        INSERT INTO vehicle (PlateNumber, VehicleStatus, UserID)
+        VALUES (%s, %s, %s)
+        """
+
+        mycursor.execute(insert_query, (plate_number, 'Active', user_id))
+        db.commit()
+        flash("Vehicle registered successfully ✔.", "success")
+        return redirect(url_for('vehicle_registration'))
+
+    return render_template('vehicle_registration.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()      
+    return redirect(url_for('login'))
+
 
 if __name__ == '__main__':
     # with app.app_context():

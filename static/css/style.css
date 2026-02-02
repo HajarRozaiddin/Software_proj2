@@ -49,6 +49,8 @@ ul li.active{
     color: black;
 }
 
+
+
 .logo img{
     float: left;
     width: 150px;
@@ -127,3 +129,324 @@ textarea {
     font-size: 16px;
     resize: vertical;
 }
+
+.settings-container {
+    max-width: 600px;
+    margin: 120px auto;
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.settings-container h2 {
+    margin-bottom: 20px;
+}
+
+.settings-item {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);   
+}
+
+
+.settings-item a {
+    text-decoration: none;
+    font-size: 18px;
+    color: #1047AC;
+    font-weight: bold;
+}
+
+.settings-item a:hover {
+    text-decoration: underline;
+}
+
+
+.vehicle-container {
+    max-width: 500px;
+    margin: 0 auto 80px auto;
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+
+.vehicle-container h2 {
+    margin-bottom: 25px;
+    color: #000;
+}
+
+.vehicle-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.vehicle-form label {
+    text-align: left;
+    font-weight: bold;
+}
+
+.vehicle-form input {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.vehicle-form button {
+    margin-top: 10px;
+    padding: 12px;
+    background-color: #1047AC;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.vehicle-form button:hover {
+    background-color: #0d3a8f;
+}
+
+.flash-slot {
+    min-height: 70px;     /* controls spacing when no message */
+    margin-top: 80px;    /* distance from navbar */
+}
+
+/* Flash message itself */
+.flash-top {
+    max-width: 545px;
+    margin: 0 auto 15px auto;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+}
+
+
+/* SUCCESS flash (✔ registered) */
+.flash-top.success {
+    background-color: #d4edda;   /* green */
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* ERROR flash (✖ already registered) */
+.flash-top.error {
+    background-color: #f8d7da;   /* red */
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+
+.profile-wrapper {
+    max-width: 1200px;
+    margin: 15px auto 80px auto;
+    padding: 0 40px;
+}
+
+.profile-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+.profile-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 13px 100px 50px 60px;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 60px;
+
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+
+    max-height: 460px;   
+    overflow-y: auto;
+}
+
+/* left */
+.profile-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 30px;
+}
+
+.profile-left img {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    object-fit: cover;
+    margin-bottom: 18px;
+}
+
+.profile-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #222;
+}
+
+/* right */
+.profile-right {
+    flex: 1;
+}
+
+.profile-field {
+    margin-bottom: 22px;
+}
+
+.profile-field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.profile-field input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: none;
+    background-color: #f4f6fa;
+    font-size: 16px;
+    color: #111;
+}
+
+.vehicle-title {
+    margin-top: 35px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #222;
+}
+
+.no-vehicle {
+    color: #777;
+    font-style: italic;
+}
+
+/* Scrollbar container */
+.profile-card::-webkit-scrollbar {
+    width: 6px;   /* slimmer */
+}
+
+/* Scrollbar handle */
+.profile-card::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+}
+
+/* Track */
+.profile-card::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Blue Edit button */
+.edit-btn {
+    margin-top: 10px;
+    padding: 10px 18px;
+    background-color: #1047AC;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.edit-btn:hover {
+    background-color: #0d3a8f;
+}
+
+/* Profile action buttons */
+.profile-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.cancel-btn {
+    background-color: #ccc;
+    color: #000;
+}
+
+.submit-btn {
+    background-color: #1047AC;
+}
+
+/* Vehicle row layout */
+.vehicle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Delete vehicle button */
+.delete-btn {
+    background-color: #b91111;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background-color: #8a0d09;
+}
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+/* ===== MODAL BOX ===== */
+.modal-box {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    width: 350px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-box h3 {
+    margin-bottom: 10px;
+}
+
+.modal-box p {
+    margin-bottom: 20px;
+    color: #444;
+}
+
+/* ===== MODAL BUTTONS ===== */
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.modal-actions .delete-btn {
+    background-color: #b91111;
+}
+
+.modal-actions .delete-btn:hover {
+    background-color: #8a0d09;
+}
+
+

@@ -67,3 +67,8 @@ body {
     border-radius: 5px;
     font-size: 14px;
 }
+
+.forgot-link {
+    margin-top: 25px;   /* increase this to move it lower */
+}
+
