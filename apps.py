@@ -26,6 +26,18 @@ db = mysql.connector.connect(
 #     **{k: v for k, v in dbconfig.items() if v}  
 # )
  
+
+def get_db_connection():
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT")),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        ssl_ca="ca.pem",
+        ssl_verify_cert=True
+    )
+
 mycursor = db.cursor(dictionary=True)
 
 # class User(db.Model):
@@ -87,15 +99,6 @@ def do_login():
         flash("Account temporarily locked. Try again later.")
         return redirect(url_for('login'))
 
-<<<<<<< HEAD
-    input_user = request.form['userid']
-    input_password = request.form['password']
-
-    # Correct details
-    query = "SELECT * FROM user WHERE UserID = %s AND Password = %s"
-    
-=======
->>>>>>> d5dbd0d18885a522ded87497e6dd8bac626b7e33
     try:
         user_id = int(request.form['userid'])
     except ValueError:
@@ -128,16 +131,77 @@ def do_login():
     flash("Invalid login credentials.")
     return redirect(url_for('login'))
 
-@app.route('/home')
+@app.route("/home")
 def home():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    return render_template('home.html')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT COUNT(*) AS emergency_count
+        FROM (
+            SELECT CategoryID
+            FROM incident
+            ORDER BY DateReported DESC
+            LIMIT 5
+        ) recent
+        WHERE CategoryID = %s
+    """
+
+    cursor.execute(query, (1,))
+    result = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    emergency_count = result["emergency_count"]
+
+    return render_template(
+        'home.html',
+        emergency_count=emergency_count
+    )
+
+from flask import request
 
 @app.route('/incidents')
 def incidents():
-    return render_template('incidents.html')
+    incident_id = request.args.get('incident_id', type=int)
 
+    if incident_id:
+        mycursor.execute("""
+            SELECT 
+                i.IncidentID,
+                i.Title,
+                i.Description,
+                i.DateReported,
+                i.Status,
+                l.LocationName AS Location
+            FROM incident i
+            LEFT JOIN location l ON i.LocationID = l.LocationID
+            WHERE i.IncidentID = %s
+        """, (incident_id,))
+        incident = mycursor.fetchone()
+        if not incident:
+            flash("Incident not found.")
+            return redirect(url_for('incidents'))
+        return render_template('incident_details.html', incident=incident)
+
+    mycursor.execute("""
+        SELECT 
+            i.IncidentID,
+            i.Title,
+            i.DateReported,
+            i.Status,
+            l.LocationName AS Location
+        FROM incident i
+        LEFT JOIN location l ON i.LocationID = l.LocationID
+        ORDER BY i.DateReported DESC
+        LIMIT 100
+    """)
+    incidents = mycursor.fetchall()
+    return render_template('incidents.html', incidents=incidents)
 
 @app.route('/reportform')
 def reportform():
@@ -146,6 +210,64 @@ def reportform():
 @app.route('/reportcomplete')
 def reportcomplete(): 
     return render_template('reportcomplete.html')
+
+from datetime import datetime
+
+@app.route('/submit_incident', methods=['POST'])
+def submit_incident():
+    if not session.get('logged_in'):
+        flash("Please log in to submit a report.")
+        return redirect(url_for('login'))
+
+    title = request.form.get('incidenttitle')
+    date_reported = request.form.get('incidentdate')
+    location_name = request.form.get('incidentlocation')
+    category_name = request.form.get('incidentcategory')
+    incident_type = request.form.get('incidenttype')
+    description = request.form.get('incidenttext')
+    user_id = session.get('userid')
+
+    if not all([title, date_reported, location_name, category_name]):
+        flash("Please fill in all required fields.")
+        return redirect(url_for('reportform'))
+
+    try:
+        check_query = """
+            SELECT IncidentID FROM incident 
+            WHERE Title = %s AND UserID = %s AND DateReported = %s
+        """
+        mycursor.execute(check_query, (title, user_id, date_reported))
+        if mycursor.fetchone():
+            flash("Duplicate detected: You have already submitted this report today.")
+            return redirect(url_for('reportform'))
+
+        mycursor.execute("SELECT LocationID FROM location WHERE LocationName = %s", (location_name,))
+        loc_res = mycursor.fetchone()
+        location_id = loc_res['LocationID'] if loc_res else None
+
+        mycursor.execute("SELECT CategoryID FROM category WHERE CategoryName = %s", (category_name,))
+        cat_res = mycursor.fetchone()
+        category_id = cat_res['CategoryID'] if cat_res else None
+
+        full_description = f"Type: {incident_type} | {description}"
+
+        insert_sql = """
+            INSERT INTO incident (Title, Description, Status, DateReported, UserID, LocationID, CategoryID)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """
+        values = (title, full_description, 'On-going', date_reported, user_id, location_id, category_id)
+        
+        mycursor.execute(insert_sql, values)
+        db.commit()
+
+        flash("Incident report submitted successfully!")
+        return redirect(url_for('reportcomplete'))
+
+    except Exception as e:
+        db.rollback()
+        print(f"CRITICAL ERROR: {e}")
+        flash("A system error occurred. Please try again later.")
+        return redirect(url_for('reportform'))
 
 @app.route('/settings')
 def settings():
@@ -240,6 +362,42 @@ def vehicle_registration():
         return redirect(url_for('vehicle_registration'))
 
     return render_template('vehicle_registration.html')
+
+@app.route('/reportuser', methods=['GET', 'POST'])
+@role_required(['Security staff'])
+def reportuser():
+    if request.method == 'POST':
+        reported_id = request.form.get('reported_id')
+        reason = request.form.get('reason')
+        reporter_id = session.get('userid')
+        
+        try:
+            insert_query = """
+                INSERT INTO incident (Title, Description, Status, DateReported, UserID)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            title = f"USER REPORT: ID {reported_id}"
+            description = f"Reported by Security Staff {reporter_id}. Reason: {reason}"
+            date_now = datetime.now().strftime('%Y-%m-%d')
+            
+            mycursor.execute(insert_query, (title, description, 'Pending Review', date_now, reporter_id))
+            db.commit()
+            
+            flash("User report submitted successfully for administrative review.")
+            return redirect(url_for('home'))
+            
+        except Exception as e:
+            db.rollback()
+            print(f"Database Error: {e}")
+            flash("A system error occurred. Please try again.")
+            return redirect(url_for('reportuser'))
+
+    mycursor.execute("SELECT UserID, Name FROM user WHERE Role != 'Admin'")
+    users_list = mycursor.fetchall()
+    
+    return render_template('reportuser.html', users=users_list)
+
+
 
 if __name__ == '__main__':
     # with app.app_context():

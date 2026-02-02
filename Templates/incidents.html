@@ -1,29 +1,62 @@
-    
-    {% extends "base.html" %}
+{% extends "base.html" %}
 
-    {% block title %}MMU Security Dashboard{% endblock %}
-    {% block body %}
+{% block title %}MMU Security Dashboard{% endblock %}
+{% block body %}
 
-    <main>
-        <section>
-            <h2>Welcome to the MMU Security Dashboard</h2>
-            <p>Here you can monitor security alerts, manage user access, and review system logs.</p>
-        </section>
-        
-           
-        <section class="info">
-            
-            <div class="info-box">
-                <h3>Security Alerts</h3>
-                <p>No new alerts.</p>
+<main>
+  <section>
+    <h2>Welcome to the MMU Security Dashboard</h2>
+    <p>Monitor security alerts, manage access, and review system logs below.</p>
+  </section>
 
-                <div class="report-url">
-                <h3>Report an Incident</h3>
-                <li><a href="{{ url_for('reportform') }}">Report Form</a></li>
-                </div>
+  <section class="info">
+    <div class="info-box">
+      <h3>Recent Incidents</h3>
 
-            </div>
-        </section>
-    </main>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Date Reported</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for incident in incidents %}
+          <tr>
+            <td><strong>{{ incident.Title }}</strong></td>
+            <td>{{ incident.Location or 'Not Specified' }}</td>
+            <td>
+              {% if incident.Status == 'On-going' %}
+                <span class="status-active">On-going</span>
+              {% elif incident.Status == 'Completed' %}
+                <span class="status-done">Completed</span>
+              {% else %}
+                <span class="status-default">{{ incident.Status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {{ incident.DateReported.strftime('%d %b %Y') if incident.DateReported.strftime else incident.DateReported }}
+            </td>
+            <td>
+                <a href="{{ url_for('incidents', incident_id=incident.IncidentID) }}" class="view-link">View Details</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center;">No incidents found in the database.</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
 
-    {% endblock %}
+      <div class="report-url">
+        <p><a href="{{ url_for('reportform') }}" class="button">Submit a New Incident Report</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% endblock %}

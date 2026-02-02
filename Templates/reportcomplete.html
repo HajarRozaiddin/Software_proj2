@@ -1,20 +1,29 @@
-    {% extends "base.html" %}
+{% extends "base.html" %}
 
-    {% block title %}MMU Security Dashboard{% endblock %}
-    {% block body %}
+{% block title %}MMU Security Dashboard{% endblock %}
 
-    <main>
-        <section>
-            <h2>
-                Report Submitted Successfully!
-            </h2>
-            
-            <div class="form">>
-                <h1>Your incident report has been submitted.</h1>
-                <p>Thank you for helping us keep the campus safe.</p>
-                <p><a href="{{ url_for('home') }}">Return to Home</a></p>
-            </div>
-        </section>     
-    </main>
+{% block body %}
+<main>
+    <section>
+        {# This block 'consumes' the flash message so it doesn't appear later on the login page #}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert success-alert" style="padding: 10px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; margin-bottom: 20px; border-radius: 4px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    {% endblock %}
+        <h2>Report Submitted Successfully!</h2>
+        
+        <div class="form">
+            <h1>Your incident report has been recorded.</h1>
+            <p>Thank you for helping us keep the campus safe.</p>
+            <br>
+            <p><a href="{{ url_for('home') }}" class="btn">Return to Home</a></p>
+        </div>
+    </section>     
+</main>
+{% endblock %}

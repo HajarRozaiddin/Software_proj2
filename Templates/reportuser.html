@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Report User Violation{% endblock %}
+
+{% block body %}
+<main>
+<section class="form">
+    <form action="{{ url_for('reportuser') }}" method="POST">
+
+        <h1>User Violation Report</h1>
+
+        <p>Select User to Report</p>
+        <select name="reported_id" required>
+            <option value="" disabled selected>Select User...</option>
+            {% for user in users %}
+                <option value="{{ user.UserID }}">
+                    {{ user.Name }} (ID: {{ user.UserID }})
+                </option>
+            {% endfor %}
+        </select>
+
+        <p>Violation Details</p>
+        <textarea name="reason" rows="5" required></textarea>
+
+        <button type="submit" class="btn">Submit Official Report</button>
+        <a href="{{ url_for('home') }}" class="back-link">Cancel</a>
+
+    </form>
+</section>
+
+</main>
+{% endblock %}

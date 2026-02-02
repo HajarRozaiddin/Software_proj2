@@ -9,8 +9,8 @@
                 Issues around campus? Submit a report now.
             </h2>
             
-            <div class="form">
-                <form action="/submit_incident" method="post">
+            <section class="form">
+                <form action="/submit_incident" method="post" id="incidentForm" onsubmit="disableButton()">
                     
                     <h1>Incident Report Form</h1>
 
@@ -21,20 +21,70 @@
                     <input type="date" name="incidentdate" id="incidentdate" placeholder="Date">
 
                     <p>Location of Incident</p>
-                    <input type="text" name="incidentlocation" id="incidentlocation" placeholder="Location">
+                    <select name="incidentlocation" required>
+                        <option value="" disabled selected>Select Location</option>
+                        <option value="Library">Library</option>
+                        <option value="DTC">DTC</option>
+                        <option value="MPH">MPH</option>
+                        <option value="CLC">CLC</option>
+                        <option value="Rimbun Ilmu">Rimbun Ilmu</option>
+                        <option value="STyLE">STyLE</option>
+                        <option value="HB4">HB4</option>
+                        <option value="HB3">HB3</option>
+                        <option value="HB2">HB2</option>
+                        <option value="HB1">HB1</option>
+                        <option value="MMU Stadium">MMU Stadium</option>
+                        <option value="Starbees">Starbees</option>
+                        <option value="FCI">FCI</option>
+                        <option value="FOM">FOM</option>
+                        <option value="FAIE">FAIE</option>
+                        <option value="FCM">FCM</option>
+                        <option value="FCA">FCA</option>
+                        <option value="FAC">FAC</option>
+                    </select>
 
                     <p>Type of Incident</p>
-                    <input type="text" name="incidenttype" id="incidenttype" placeholder="Type of Incident">
+                    <select name="incidenttype" required>
+                        <option value="" disabled selected>Select Incident Type</option>
+                        <option value="Harassment">Harassment</option>
+                        <option value="Theft">Theft</option>
+                        <option value="Vandalism">Vandalism</option>
+                        <option value="Assault">Assault</option>
+                        <option value="Suspicious Activity">Suspicious Activity</option>
+                        <option value="Fight">Fight</option>
+                        <option value="Accident">Accident</option>
+                        <option value="Medical Emergency">Medical Emergency</option>
+                        <option value="Fire">Fire</option>
+                        <option value="Hazardous Material">Hazardous Material</option>
+                        <option value="Other">Other</option>
+                    </select>
 
                     <p>Description of Incident</p>
                     <textarea name="incidenttext" id="incidenttext"></textarea>
 
-                    <button href="/reportcomplete" type="submit" class="btn">
+                    <p>Category of Incident</p>
+                    <select name="incidentcategory" required>
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Non-Emergency">Non-Emergency</option>
+                    </select>
+
+                    <button type="submit" id="submitBtn" class="btn">
                         Submit Report
                     </button>
+
                 </form>
-            </div>
+            </section>
         </section>     
     </main>
+
+    <script>
+        function disableButton() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerText = 'Submitting...';
+            return true;
+        }
+    </script>
 
     {% endblock %}
