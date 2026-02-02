@@ -85,10 +85,15 @@ def do_login():
 
         if user:
             session['logged_in'] = True
-            session['username'] = user['UserID'] 
+            session['username'] = user['UserID']
+            session['role'] = 'admin' if user['AdminLevel'] == 1 else 'user'
             session['fail_count'] = 0
             session['lock_until'] = 0
-            return redirect(url_for('home'))
+            
+            if session['role'] == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            else:
+                return redirect(url_for('home'))
             
     except mysql.connector.Error as err:
         flash(f"Database error: {err}")
@@ -106,6 +111,43 @@ def do_login():
 
     return redirect(url_for('login'))
 
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    if not session.get('logged_in') or session.get('role') != 'admin':
+        flash("Unauthorized access.")
+        return redirect(url_for('home'))
+
+    mycursor.execute("SELECT COUNT(*) as total FROM location")
+    loc_count = mycursor.fetchone()['total']
+    return render_template('admin_dashboard.html', loc_count=loc_count)
+
+# --- ADMIN MODULE: User Access Management ---
+@app.route('/manage_users')
+def manage_users():
+    # Only admins can access this page
+    if not session.get('logged_in') or session.get('role') != 'admin':
+        return redirect(url_for('login'))
+        
+    mycursor.execute("SELECT UserID, AdminLevel FROM admin")
+    users = mycursor.fetchall()
+    return render_template('manage_users.html', users=users)
+
+@app.route('/update_user_role', methods=['POST'])
+def update_user_role():
+    target_user = request.form['userid']
+    new_level = request.form['admin_level'] # Match the 'name' attribute in your HTML select
+    
+    query = "UPDATE admin SET AdminLevel = %s WHERE UserID = %s"
+    try:
+        mycursor.execute(query, (new_level, target_user))
+        db.commit()
+        # This acts as the final step of your Sequence Diagram
+        flash(f"User {target_user} updated successfully!")
+    except mysql.connector.Error as err:
+        flash(f"Database update failed: {err}")
+        
+    return redirect(url_for('manage_users'))
+
 @app.route('/home')
 def home():
     if not session.get('logged_in'):
@@ -113,7 +155,7 @@ def home():
     return render_template('home.html')
 
 @app.route('/incidents')
-def reports():
+def incidents():
     return render_template('incidents.html')
 
 @app.route('/reportform')
@@ -126,7 +168,7 @@ def reportcomplete():
 
 @app.route('/location')
 def location():
-    # Only allow access if logged in
+    
     if not session.get('logged_in'):
         return redirect(url_for('login'))
         
@@ -136,16 +178,16 @@ def location():
 
 @app.route('/add_location', methods=['POST'])
 def add_location():
-    # Fetch data from the HTML form names
+    
     loc_name = request.form['location_name']
     loc_desc = request.form['location_description']
     
-    # Matches your database columns: LocationName and Description
+   
     query = "INSERT INTO location (LocationName, Description) VALUES (%s, %s)"
     
     try:
         mycursor.execute(query, (loc_name, loc_desc))
-        db.commit() # Important to save changes to Aiven cloud
+        db.commit() 
         flash("New location added successfully!")
     except mysql.connector.Error as err:
         flash(f"Database error: {err}")
