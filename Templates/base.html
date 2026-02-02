@@ -12,9 +12,15 @@
 <header>
     <div class="main">
         <div class="logo">
-            <a href="{{ url_for('home') }}">
+            {% if session['role'] == 'Admin' %}
+        <a href="{{ url_for('admin_dashboard') }}">
                 <img src="{{ url_for('static', filename='mmu_logo.png') }}" alt="MMU Logo">
             </a>
+            {% else %}
+        <a href="{{ url_for('home') }}">
+                <img src="{{ url_for('static', filename='mmu_logo.png') }}" alt="MMU Logo">
+            </a>
+            {% endif %}
         </div>
         <ul>
             {# ONLY Security Staff sees this tab #}
@@ -24,6 +30,7 @@
             <li><a href="{{ url_for('reportform') }}">Report Form</a></li>
             <li><a href="{{ url_for('incidents') }}">View Incidents</a></li>
             <li><a href="{{ url_for('settings') }}">Settings</a></li>
+<<<<<<< HEAD
             <li><a href="{{ url_for('login') }}">Logout</a></li>
             {# ONLY Security Staff sees this tab #}
             {% if session.get('role') == 'Security staff' %}
@@ -32,6 +39,10 @@
                 {% endif %}
                 <img src="{{ url_for('static', filename='Notification.png') }}" alt="Notification Bell" id="bell">
             {% endif %}
+=======
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            <li><a href="{{ url_for('location') }}">Location</a></li>
+>>>>>>> 50767088c5fd00b298cd68aad6638675dad5a572
         </ul>
     </div>
 </header>
