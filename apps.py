@@ -156,54 +156,64 @@ def admin_dashboard():
 
 @app.route('/manage_users')
 def manage_users():
-    # Ensure 'Admin' matches exactly what is in your MySQL table
     if not session.get('logged_in') or session.get('role') != 'Admin':
-        flash("Unauthorized access. Admin only.")
+        flash("Unauthorized access.")
         return redirect(url_for('login'))
         
-    mycursor.execute("SELECT UserID, Name, Role, AccountStatus FROM user")
+    search_query = request.args.get('search')
+    
+    if search_query:
+        # Step: "Does account exist?"
+        query = "SELECT UserID, Name, Role, AccountStatus FROM user WHERE UserID LIKE %s OR Name LIKE %s"
+        mycursor.execute(query, (f"%{search_query}%", f"%{search_query}%"))
+    else:
+        # Step: "Display registered accounts"
+        mycursor.execute("SELECT UserID, Name, Role, AccountStatus FROM user")
+    
     users = mycursor.fetchall()
+    
+    # Logic for "Account not found" node
+    if not users and search_query:
+        flash(f"No results found for '{search_query}'")
+        
     return render_template('manage_users.html', users=users)
 
 @app.route('/update_user_role', methods=['POST'])
 def update_user_role():
-    target_user = request.form['userid']
-    new_level = request.form['admin_level'] 
-    
-    query = "UPDATE admin SET AdminLevel = %s WHERE UserID = %s"
+    # 1. Capture only the existing columns
+    target_user = request.form.get('userid')
+    new_name = request.form.get('new_name')
+    new_role = request.form.get('new_role')
+    new_status = request.form.get('new_status')
+
+    # 2. Logic Gate: "Is the data valid?"
+    if not all([target_user, new_name, new_role, new_status]):
+        flash("All fields are required.")
+        return redirect(url_for('manage_users'))
+
     try:
-        mycursor.execute(query, (new_level, target_user))
+        # 3. Logic Gate: "Validate and apply updates"
+        # Removed AdminLevel from this query to fix the SQL error
+        query = """
+            UPDATE user 
+            SET Name = %s, Role = %s, AccountStatus = %s 
+            WHERE UserID = %s
+        """
+        mycursor.execute(query, (new_name, new_role, new_status, target_user))
         db.commit()
+
+        # 4. Final Node: "Record changes in Audit Log"
+        with open('audit_log.txt', 'a') as f:
+            f.write(f"Admin {session.get('userid')} updated User {target_user} (Role: {new_role}, Status: {new_status})\n")
+        
         flash(f"User {target_user} updated successfully!")
-    except mysql.connector.Error as err:
-        flash(f"Database update failed: {err}")
+
+    except Exception as e:
+        # 5. Final Node: "Reset all changes"
+        db.rollback()
+        flash(f"Update failed: {str(e)}")
         
     return redirect(url_for('manage_users'))
-
-@app.route('/location')
-def location():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-        
-    mycursor.execute("SELECT * FROM location")
-    locations = mycursor.fetchall()
-    return render_template('location.html', locations=locations)
-
-@app.route('/add_location', methods=['POST'])
-def add_location():
-    loc_name = request.form['location_name']
-    loc_desc = request.form['location_description']
-    
-    query = "INSERT INTO location (LocationName, Description) VALUES (%s, %s)"
-    
-    try:
-        mycursor.execute(query, (loc_name, loc_desc))
-        db.commit() 
-        flash("New location added successfully!")
-    except mysql.connector.Error as err:
-        flash(f"Database error: {err}")
-        
-    return redirect(url_for('location'))
 
 @app.route('/reset', methods=['GET', 'POST'])
 def reset_password():

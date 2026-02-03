@@ -64,41 +64,66 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+    <div style="margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+        <form action="{{ url_for('manage_users') }}" method="GET" style="display: flex; gap: 10px;">
+            <input type="text" name="search" placeholder="Search by User ID " 
+                   value="{{ request.args.get('search', '') }}" 
+                   style="flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            
+            <button type="submit" class="update-btn">Search</button>
+            
+            {% if request.args.get('search') %}
+                <a href="{{ url_for('manage_users') }}" 
+                   style="text-decoration: none; padding: 10px; color: #666; background: #eee; border-radius: 4px;">Clear</a>
+            {% endif %}
+        </form>
+    </div>
 
     <table class="user-table">
         <thead>
             <tr>
                 <th>User ID</th>
-                <th>Current Status</th>
-                <th>Change Access Level</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Action</th>
             </tr>
         </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td><strong>{{ user.UserID }}</strong></td>
-                <td>
-                    {% if user.AdminLevel == 1 %}
-                        <span class="badge badge-admin">Administrator</span>
-                    {% else %}
-                        <span class="badge badge-user">Standard User</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <form action="{{ url_for('update_user_role') }}" method="POST" style="display: flex; gap: 10px;">
-                        <input type="hidden" name="userid" value="{{ user.UserID }}">
-                        
-                        <select name="admin_level" style="padding: 5px; border-radius: 4px;">
-                            <option value="0" {% if user.AdminLevel == 0 %}selected{% endif %}>User</option>
-                            <option value="1" {% if user.AdminLevel == 1 %}selected{% endif %}>Admin</option>
-                        </select>
-                        
-                        <button type="submit" class="update-btn">Save Changes</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+<tbody>
+    {% for user in users %}
+    <tr>
+        <form action="{{ url_for('update_user_role') }}" method="POST">
+            <input type="hidden" name="userid" value="{{ user.UserID }}">
+            
+            <td><strong>{{ user.UserID }}</strong></td>
+            
+            <td>
+                <input type="text" name="new_name" value="{{ user.Name }}" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+            </td>
+            
+            <td>
+                <select name="new_role" style="padding: 5px; border-radius: 4px;">
+                    <option value="Student" {% if user.Role == 'Student' %}selected{% endif %}>Student</option>
+                    <option value="Staff" {% if user.Role == 'Staff' %}selected{% endif %}>Staff</option>
+                    <option value="Security staff" {% if user.Role == 'Security staff' %}selected{% endif %}>Security staff</option>
+                    <option value="Admin" {% if user.Role == 'Admin' %}selected{% endif %}>Admin</option>
+                </select>
+            </td>
+            
+            <td>
+                <select name="new_status" style="padding: 5px; border-radius: 4px;">
+                    <option value="Active" {% if user.AccountStatus == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="Inactive" {% if user.AccountStatus == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </td>
+            
+            <td>
+                <button type="submit" class="update-btn">Save Changes</button>
+            </td>
+        </form>
+    </tr>
+    {% endfor %}
+</tbody>
     </table>
 </div>
-{% endblock %}
+{% endblock %} {# <--- ENSURE THIS TAG IS HERE #}
