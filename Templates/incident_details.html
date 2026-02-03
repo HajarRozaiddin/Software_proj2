@@ -47,7 +47,11 @@
                 </div>
             </div>
 
-            <a href="{{ url_for('home') }}" class="back-link">← Back to Dashboard</a>
+            {% if session.get('role') == 'Admin' %}
+    <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+{% else %}
+    <a href="{{ url_for('home') }}">← Back to Dashboard</a>
+{% endif %}
         </div>
     </section>
 </main>

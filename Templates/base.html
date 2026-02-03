@@ -27,7 +27,9 @@
             {% if session.get('role') == 'Security staff' %}
                 <li><a href="{{ url_for('reportuser') }}">Report User</a></li>
             {% endif %}
+            {% if session.get('role') != 'Admin' %}
             <li><a href="{{ url_for('reportform') }}">Report Form</a></li>
+            {% endif %}
             <li><a href="{{ url_for('incidents') }}">View Incidents</a></li>
             <li><a href="{{ url_for('settings') }}">Settings</a></li>
             <li><a href="{{ url_for('login') }}">Logout</a></li>
