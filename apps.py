@@ -180,38 +180,50 @@ def manage_users():
 
 @app.route('/update_user_role', methods=['POST'])
 def update_user_role():
-    # 1. Capture only the existing columns
+    # 1. Capture the existing columns
     target_user = request.form.get('userid')
     new_name = request.form.get('new_name')
     new_role = request.form.get('new_role')
     new_status = request.form.get('new_status')
 
-    # 2. Logic Gate: "Is the data valid?"
+    # 2. Logic Gate: "Is the data valid?" (Presence Check)
     if not all([target_user, new_name, new_role, new_status]):
-        flash("All fields are required.")
+        flash("Display error: All fields are required.")
+        return redirect(url_for('manage_users'))
+
+    # NEW: Data Type Validation (Check for numbers in Name)
+    # This prevents names like "12345" from being saved.
+    if any(char.isdigit() for char in new_name):
+        # Diagram Path: "Invalid" -> "Display error"
+        flash("Display error: Names cannot contain numbers.")
+        
+        # Diagram Path: "Record changes in Audit Log"
+        with open('audit_log.txt', 'a') as f:
+            f.write(f"{datetime.now()} - FAILED update: Admin {session.get('userid')} attempted invalid name '{new_name}' for User {target_user}\n")
+        
         return redirect(url_for('manage_users'))
 
     try:
         # 3. Logic Gate: "Validate and apply updates"
-        # Removed AdminLevel from this query to fix the SQL error
         query = """
             UPDATE user 
             SET Name = %s, Role = %s, AccountStatus = %s 
             WHERE UserID = %s
         """
         mycursor.execute(query, (new_name, new_role, new_status, target_user))
-        db.commit()
+        db.commit() # Diagram Path: "Update Successful"
 
         # 4. Final Node: "Record changes in Audit Log"
         with open('audit_log.txt', 'a') as f:
-            f.write(f"Admin {session.get('userid')} updated User {target_user} (Role: {new_role}, Status: {new_status})\n")
+            f.write(f"{datetime.now()} - Admin {session.get('userid')} updated User {target_user} (Role: {new_role}, Status: {new_status})\n")
         
         flash(f"User {target_user} updated successfully!")
 
     except Exception as e:
-        # 5. Final Node: "Reset all changes"
+        # 5. Final Node: "Reset all changes" (Rollback)
         db.rollback()
-        flash(f"Update failed: {str(e)}")
+        # Diagram Path: "Display failure notification"
+        flash(f"System Error: {str(e)}") 
         
     return redirect(url_for('manage_users'))
 
