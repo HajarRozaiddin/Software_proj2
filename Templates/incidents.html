@@ -9,6 +9,14 @@
     <p>Monitor security alerts, manage access, and review system logs below.</p>
   </section>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="flash-top {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
   <section class="info">
     <div class="info-box">
       <h3>Recent Incidents</h3>

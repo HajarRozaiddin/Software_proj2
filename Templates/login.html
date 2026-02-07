@@ -41,5 +41,16 @@
     
     </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      {# Only show messages that aren't about incidents on the login page #}
+      {% if "Incident" not in message %}
+        <div class="flash-top {{ category }}">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 </body>
 </html>

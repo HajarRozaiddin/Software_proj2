@@ -47,11 +47,25 @@
                 </div>
             </div>
 
+            {% if session.get('role') == 'Security staff' or session.get('role') == 'Admin' %}
+            <div class="detail-row">
+                <form action="{{ url_for('update_incident_status', incident_id=incident.IncidentID) }}" method="POST">
+                    <label><strong>Update Status:</strong></label>
+                    <select name="status" style="padding: 5px; border-radius: 5px;">
+                        <option value="On-going" {% if incident.Status == 'On-going' %}selected{% endif %}>On-going</option>
+                        <option value="Completed" {% if incident.Status == 'Completed' %}selected{% endif %}>Completed</option>
+                        <option value="Pending Review" {% if incident.Status == 'Pending Review' %}selected{% endif %}>Pending Review</option>
+                    </select>
+                    <button type="submit" style="padding: 5px 15px; margin-left: 10px;">Update</button>
+                </form>
+            </div>
+            {% endif %}
+
             {% if session.get('role') == 'Admin' %}
-    <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
-{% else %}
-    <a href="{{ url_for('home') }}">← Back to Dashboard</a>
-{% endif %}
+                <a href="{{ url_for('admin_dashboard') }}">← Back to Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('home') }}">← Back to Dashboard</a>
+            {% endif %}
         </div>
     </section>
 </main>

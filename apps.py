@@ -1,9 +1,10 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
 import time
 import mysql.connector
-
+from flask import request
 from dotenv import load_dotenv
 import os
+from flask_mail import Mail, Message
 from functools import wraps
 
 app = Flask(__name__, static_folder='static', template_folder='Templates')
@@ -40,6 +41,17 @@ def get_db_connection():
     )
 
 mycursor = db.cursor(dictionary=True)
+
+app.config.update(
+    MAIL_SERVER=os.getenv("MAIL_SERVER"),
+    MAIL_PORT=int(os.getenv("MAIL_PORT", 587)),
+    MAIL_USE_TLS=True,  # Try changing this to False if using Port 465
+    MAIL_USE_SSL=False, # Try changing this to True if using Port 465
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+    MAIL_DEFAULT_SENDER=os.getenv("MAIL_USERNAME")
+)
+mail = Mail(app)
 
 # class User(db.Model):
 #     userid = db.Column(db.Integer, primary_key=True)
@@ -294,45 +306,49 @@ def home():
         emergency_count=emergency_count
     )
 
-from flask import request
-
 @app.route('/incidents')
 def incidents():
     incident_id = request.args.get('incident_id', type=int)
 
     if incident_id:
         mycursor.execute("""
-            SELECT 
-                i.IncidentID,
-                i.Title,
-                i.Description,
-                i.DateReported,
-                i.Status,
-                l.LocationName AS Location
+            SELECT i.IncidentID, i.Title, i.Description, i.DateReported, i.Status, l.LocationName AS Location
             FROM incident i
             LEFT JOIN location l ON i.LocationID = l.LocationID
             WHERE i.IncidentID = %s
         """, (incident_id,))
         incident = mycursor.fetchone()
-        if not incident:
-            flash("Incident not found.")
-            return redirect(url_for('incidents'))
         return render_template('incident_details.html', incident=incident)
 
     mycursor.execute("""
         SELECT 
-            i.IncidentID,
-            i.Title,
-            i.DateReported,
-            i.Status,
+            i.IncidentID, 
+            i.Title, 
+            i.DateReported, 
+            i.Status, 
             l.LocationName AS Location
         FROM incident i
         LEFT JOIN location l ON i.LocationID = l.LocationID
+        WHERE i.DateReported >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
         ORDER BY i.DateReported DESC
-        LIMIT 100
     """)
     incidents = mycursor.fetchall()
     return render_template('incidents.html', incidents=incidents)
+
+@app.route('/update_incident_status/<int:incident_id>', methods=['POST'])
+@role_required(['Security staff', 'Admin'])
+def update_incident_status(incident_id):
+    new_status = request.form.get('status')
+    
+    mycursor.execute("""
+        UPDATE incident 
+        SET Status = %s 
+        WHERE IncidentID = %s
+    """, (new_status, incident_id))
+    db.commit()
+    
+  # flash(f"Incident #{incident_id} updated to {new_status}.", "success")
+    return redirect(url_for('incidents', incident_id=incident_id))
 
 @app.route('/reportform')
 def reportform():
@@ -343,7 +359,6 @@ def reportcomplete():
     return render_template('reportcomplete.html')
 
 from datetime import datetime
-
 @app.route('/submit_incident', methods=['POST'])
 def submit_incident():
     if not session.get('logged_in'):
@@ -392,6 +407,27 @@ def submit_incident():
         db.commit()
 
         flash("Incident report submitted successfully!")
+
+        if category_name == "Emergency":
+            try:
+                mycursor.execute("SELECT Email FROM user WHERE Role = 'Security staff'")
+                rows = mycursor.fetchall()
+                recipients = [row['Email'] for row in rows if row['Email']]
+
+                if recipients:
+                    msg = Message(
+                        "EMERGENCY ALERT",
+                        recipients=recipients
+                    )
+                    msg.body = f"Incident: {title}\nLocation: {location_name}\nDescription: {description}"
+                    mail.send(msg)
+                    print(">>> EMAIL SENT SUCCESSFULLY")
+                else:
+                    print(">>> ERROR: No emails found for 'Security staff' in database.")
+
+            except Exception as e:
+                print(f">>> SMTP ERROR: {e}")
+
         return redirect(url_for('reportcomplete'))
 
     except Exception as e:
@@ -412,7 +448,6 @@ def profile():
     user_id = session['userid']
     role = session['role']
 
-    # 👉 UPDATE email & phone
     if request.method == 'POST':
         new_email = request.form['email']
         new_phone = request.form['phone']
@@ -554,6 +589,7 @@ def reportuser():
 
 @app.route('/logout')
 def logout():
+    get_flashed_messages() 
     session.clear()      
     return redirect(url_for('login'))
 
