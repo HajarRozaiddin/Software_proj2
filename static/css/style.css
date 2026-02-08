@@ -348,7 +348,6 @@ textarea {
     background: transparent;
 }
 
-<<<<<<< HEAD
 .status-badge {
     padding: 5px 12px;
     border-radius: 12px;
@@ -465,7 +464,6 @@ tr:hover {
     position: fixed;
     color: red;    
 }
-=======
 /* Blue Edit button */
 .edit-btn {
     margin-top: 10px;
@@ -568,4 +566,3 @@ tr:hover {
 }
 
 
->>>>>>> 50767088c5fd00b298cd68aad6638675dad5a572
